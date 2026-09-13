@@ -17,6 +17,15 @@ class Rendering {
                 {opcode: 'resetFrames', blockType: 'command', text: 'reset frames'},
                 {opcode: 'addFrame', blockType: 'command', text: 'add frame'},
                 {
+                    opcode: 'setCanvasRenderSize',
+                    blockType: 'command',
+                    text: 'set canvas render size to width: [WIDTH] height: [HEIGHT]',
+                    arguments: {
+                        WIDTH: {type: 'number', defaultValue: 640},
+                        HEIGHT: {type: 'number', defaultValue: 360}
+                    }
+                },
+                {
                     opcode: 'exportFrames',
                     blockType: 'command',
                     text: 'export frames to mp4 name: [NAME] sound: [SOUND] framerate: [FRAMERATE]',
@@ -38,14 +47,27 @@ class Rendering {
     resetFrames () {
         this.frames = [];
     }
+    setCanvasRenderSize (args) {
+        const width = Number(args.WIDTH);
+        const height = Number(args.HEIGHT);
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) return;
+        // Canvas Effects uses fixed pixel dimensions, undoing the renderer's DPI scaling.
+        const pixelRatio = window.devicePixelRatio || 1;
+        this.runtime.renderer.resize(width / pixelRatio, height / pixelRatio);
+    }
     addFrame () {
-        const renderer = this.runtime.renderer;
-        renderer.draw();
-        const canvas = document.createElement('canvas');
-        canvas.width = this.runtime.stageWidth;
-        canvas.height = this.runtime.stageHeight;
-        canvas.getContext('2d').drawImage(renderer.canvas, 0, 0, canvas.width, canvas.height);
-        this.frames.push(canvas);
+        // Like Looks Plus "snapshot stage", capture on the renderer's next draw.
+        // Reserve the frame now so concurrent scripts retain capture order.
+        const frame = new Promise((resolve, reject) => {
+            this.runtime.renderer.requestSnapshot(uri => {
+                const snapshot = new Image();
+                snapshot.onload = () => resolve(snapshot);
+                snapshot.onerror = () => reject(new Error('Could not decode the stage snapshot.'));
+                snapshot.src = uri;
+            });
+        });
+        this.frames.push(frame);
+        return frame;
     }
     async exportFrames (args, util) {
         if (this.exporting) return;
@@ -56,7 +78,7 @@ class Rendering {
             if (!Number.isFinite(framerate) || framerate <= 0 || framerate > 240) {
                 throw new Error('Framerate must be greater than 0 and at most 240.');
             }
-            const frames = this.frames.slice();
+            const frames = await Promise.all(this.frames.slice());
             if (!frames.length) throw new Error('Add at least one frame before exporting.');
             const {Output, Mp4OutputFormat, BufferTarget, CanvasSource, AudioBufferSource, Quality} =
                 await import('mediabunny');

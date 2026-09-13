@@ -61,19 +61,31 @@ test('rendering snapshots stage, exports timed frames and sound, and resets', as
             CanvasSource: class { async add (time, duration) { timestamps.push([time, duration]); } close () {} },
             AudioBufferSource: class { async add (buffer) { audioLength = buffer.length; } close () {} }
         }
-    }, {document: {createElement: makeCanvas}, Blob, alert: message => { throw Error(message); }}).default;
+    }, {
+        document: {createElement: makeCanvas}, Blob,
+        window: {devicePixelRatio: 2},
+        Image: class {
+            constructor () { this.width = 1920; this.height = 1080; }
+            set src (uri) { assert.equal(uri, 'data:image/png;base64,snapshot'); this.onload(); }
+        },
+        alert: message => { throw Error(message); }
+    }).default;
     const runtime = {
         on () {}, stageWidth: 640, stageHeight: 360,
-        renderer: {draw () {}, canvas: makeCanvas()},
+        renderer: {
+            requestSnapshot (callback) { queueMicrotask(() => callback('data:image/png;base64,snapshot')); },
+            resize (width, height) { assert.equal(width, 960); assert.equal(height, 540); }
+        },
         audioEngine: {audioContext: {createBuffer: (channels, length) => ({
             length, getChannelData: () => new Float32Array(length)
         })}}
     };
     const extension = new Rendering(runtime);
-    extension.addFrame();
-    extension.addFrame();
+    extension.setCanvasRenderSize({WIDTH: 1920, HEIGHT: 1080});
+    await extension.addFrame();
+    await extension.addFrame();
     assert.notEqual(extension.frames[0], extension.frames[1]);
-    assert.equal(extension.frames[0].width, 640);
+    assert.equal((await extension.frames[0]).width, 1920);
     const target = {
         getSounds: () => [{name: 'music', soundId: '1'}],
         sprite: {soundBank: {getSoundPlayer: () => ({buffer: {
