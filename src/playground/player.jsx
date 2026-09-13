@@ -22,5 +22,5 @@ import Interface from './render-interface.jsx';
 import render from './app-target.js';
 
 render(<Interface
-    isPlayerOnly
+    isPlayerOnly={Boolean(location.hash.match(/^#\d+/) || location.pathname.match(/\/\d+\/?$/))}
 />);

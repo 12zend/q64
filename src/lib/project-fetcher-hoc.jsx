@@ -22,6 +22,7 @@ import {
 
 import log from './log';
 import storage from './storage';
+import {loadDefaultProject} from './q64-default-project';
 import {ProjectUnsharedError, ProjectFetchError} from './tw-load-project-error';
 
 import VM from 'scratch-vm';
@@ -127,6 +128,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         return r.arrayBuffer();
                     })
                     .then(buffer => ({data: buffer}));
+            } else if (String(projectId) === '0') {
+                assetPromise = loadDefaultProject().then(data => ({data}));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)

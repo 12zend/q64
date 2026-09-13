@@ -57,6 +57,14 @@ import {APP_NAME} from '../../brand';
 
 export default [
     {
+        name: 'Rendering',
+        extensionId: 'rendering',
+        iconURL: videoSensingIconURL,
+        description: 'Capture frames and export an MP4 with sound.',
+        tags: ['tw'],
+        featured: true
+    },
+    {
         name: (
             <FormattedMessage
                 defaultMessage="Music"

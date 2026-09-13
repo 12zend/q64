@@ -8,6 +8,7 @@ import bowser from 'bowser';
 import React from 'react';
 
 import VM from 'scratch-vm';
+import {chooseDefaultProject} from '../../lib/q64-default-project';
 
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
@@ -690,6 +691,13 @@ class MenuBar extends React.Component {
                                                 </React.Fragment>
                                             )}
                                         </SB3Downloader>
+                                        <MenuItem onClick={chooseDefaultProject}>
+                                            <FormattedMessage
+                                                defaultMessage="Set default project"
+                                                description="Choose the project used for new projects and startup"
+                                                id="q64.menuBar.setDefaultProject"
+                                            />
+                                        </MenuItem>
                                     </MenuSection>
                                     {this.props.onClickPackager && (
                                         <MenuSection>
