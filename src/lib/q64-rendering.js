@@ -19,8 +19,9 @@ class Rendering {
                 {
                     opcode: 'exportFrames',
                     blockType: 'command',
-                    text: 'export frames to mp4 sound: [SOUND] framerate: [FRAMERATE]',
+                    text: 'export frames to mp4 name: [NAME] sound: [SOUND] framerate: [FRAMERATE]',
                     arguments: {
+                        NAME: {type: 'string', defaultValue: 'frames'},
                         SOUND: {type: 'string', menu: 'sounds', defaultValue: '(no sound)'},
                         FRAMERATE: {type: 'number', defaultValue: 30}
                     }
@@ -98,7 +99,9 @@ class Rendering {
             }
             video.close();
             await output.finalize();
-            downloadBlob('frames.mp4', new Blob([output.target.buffer], {type: 'video/mp4'}));
+            const name = String(typeof args.NAME === 'undefined' ? '' : args.NAME).trim() || 'frames';
+            const filename = /\.mp4$/i.test(name) ? name : `${name}.mp4`;
+            downloadBlob(filename, new Blob([output.target.buffer], {type: 'video/mp4'}));
         } catch (error) {
             if (output && output.state !== 'finalized' && output.state !== 'canceled') await output.cancel();
             // eslint-disable-next-line no-alert

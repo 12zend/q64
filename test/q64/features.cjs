@@ -81,11 +81,15 @@ test('rendering snapshots stage, exports timed frames and sound, and resets', as
             getChannelData: () => new Float32Array(48000)
         }})}}
     };
-    await extension.exportFrames({SOUND: 'music', FRAMERATE: 30}, {target});
+    await extension.exportFrames({NAME: 'My movie', SOUND: 'music', FRAMERATE: 30}, {target});
     assert.deepEqual(timestamps, [[0, 1 / 30], [1 / 30, 1 / 30]]);
     assert.equal(audioLength, 3200);
-    assert.equal(downloads[0][0], 'frames.mp4');
+    assert.equal(downloads[0][0], 'My movie.mp4');
     assert.equal(downloads[0][1].type, 'video/mp4');
+    for (const [name, expected] of [['movie.mp4', 'movie.mp4'], ['', 'frames.mp4'], [undefined, 'frames.mp4']]) {
+        await extension.exportFrames({NAME: name, SOUND: '(no sound)', FRAMERATE: 30}, {target});
+        assert.equal(downloads.at(-1)[0], expected);
+    }
     extension.resetFrames();
     assert.equal(extension.frames.length, 0);
 });
